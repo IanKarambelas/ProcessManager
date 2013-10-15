@@ -1,0 +1,21 @@
+Introduction
+
+The Process Manager allows you to create servers, which in turn can create children of their own. It accomplishes its tasks with the use of POSIX signals. Only 9 servers may be created, and each server may only have 9 children. This is changable by editing the #define values in the source code.
+
+
+You may enter the following commands:
+
+createServer minProcs maxProcs serverName
+	This command will cause the process manager to spawn a server named serverName.  The server will start up and maintain numActive copies of itself, where numActive is initialized to the value minProcs.  The number of executing copies of the server (children) will never exceed maxProcs or drop below minProcs. It accomplishes this by calling the fork() command and sending the server to a server handler function, which tells the server to wait for signals from the process manager.
+	
+abortServer serverName
+	This command will cause the process manager to send a signal to the server named serverName, telling it to kill all of its children and then itself. No orphans will be created. It accomplishes this by creating a signal handler for SIGTERM and then sending SIGTERM to the server, which then sends all of its children the SIGKILL signal, killing them. The process manager will then collect the server's exit status.
+
+displayStatus
+	This command displays the status of the Process Management System as a process hierarchy. It accomplishes this by sending a signal to each server process to print itself and then all of its childrens' PID numbers. The process manager waits for the server to send a SIGCONT signal that it is done until calling the next server to print, preventing the servers from printing asynchronously.
+	
+createProc serverName
+	This command will increment number of children for the designated server, essentially causing another copy of serverName to be spawned and maintained.  Note: the number of active servers will never exceed maxProcs. It accomplishes this by sending a signal to the server to create a new child process using a call to fork(). The process manager will wait for a SIGCONT signal from the server to indicate that it is done before continuing.
+	
+abortProc serverName
+	This command will decrement the number of children for the designated server, essentially aborting one copy of serverName.  Note: the number of active servers will never drop below minProcs. It accomplishes this by sending a signal to the server telling it to kill a child process with the SIGKILL signal. The process manager will wait for a SIGCONT signal from the server to indicate that it is done before continuing.
